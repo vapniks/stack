@@ -50,6 +50,7 @@ library
                      Stack.BuildPlan
                      Stack.Clean
                      Stack.Config
+                     Stack.Config.Build
                      Stack.Config.Docker
                      Stack.Config.Nix
                      Stack.ConfigCmd
@@ -81,6 +82,7 @@ library
                      Stack.Types.BuildPlan
                      Stack.Types.Compiler
                      Stack.Types.Config
+                     Stack.Types.Config.Build
                      Stack.Types.Docker
                      Stack.Types.FlagName
                      Stack.Types.GhcPkgId

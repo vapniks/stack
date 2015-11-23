@@ -119,6 +119,7 @@ module Stack.Types.Config
   ,SetupInfoLocation(..)
   -- ** Docker entrypoint
   ,DockerEntrypoint(..)
+  ,module X
   ) where
 
 import           Control.Applicative
@@ -170,6 +171,10 @@ import           Stack.Types.PackageName
 import           Stack.Types.Version
 import           System.PosixCompat.Types (UserID, GroupID)
 import           System.Process.Read (EnvOverride)
+                 
+-- Re-exports
+import          Stack.Types.Config.Build as X
+
 #ifdef mingw32_HOST_OS
 import qualified Crypto.Hash.SHA1 as SHA1
 import qualified Data.ByteString.Base16 as B16
@@ -183,6 +188,8 @@ data Config =
          -- ^ this allows to override .stack-work directory
          ,configUserConfigPath      :: !(Path Abs File)
          -- ^ Path to user configuration file (usually ~/.stack/config.yaml)
+         ,configBuild               :: !BuildOpts
+         -- ^ Build configuration
          ,configDocker              :: !DockerOpts
          -- ^ Docker configuration
          ,configNix                 :: !NixOpts
