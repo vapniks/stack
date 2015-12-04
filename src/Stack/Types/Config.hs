@@ -736,6 +736,8 @@ data ConfigMonoid =
   ConfigMonoid
     { configMonoidWorkDir            :: !(Maybe FilePath)
     -- ^ See: 'configWorkDir'.
+    , configMonoidBuildOpts          :: !BuildOptsMonoid
+    -- ^ build options.
     , configMonoidDockerOpts         :: !DockerOptsMonoid
     -- ^ Docker options.
     , configMonoidNixOpts            :: !NixOptsMonoid
@@ -806,6 +808,7 @@ data ConfigMonoid =
 instance Monoid ConfigMonoid where
   mempty = ConfigMonoid
     { configMonoidWorkDir = Nothing
+    , configMonoidBuildOpts = mempty
     , configMonoidDockerOpts = mempty
     , configMonoidNixOpts = mempty
     , configMonoidConnectionCount = Nothing
@@ -841,6 +844,7 @@ instance Monoid ConfigMonoid where
     }
   mappend l r = ConfigMonoid
     { configMonoidWorkDir = configMonoidWorkDir l <|> configMonoidWorkDir r
+    , configMonoidBuildOpts = configMonoidBuildOpts l <> configMonoidBuildOpts r
     , configMonoidDockerOpts = configMonoidDockerOpts l <> configMonoidDockerOpts r
     , configMonoidNixOpts = configMonoidNixOpts l <> configMonoidNixOpts r
     , configMonoidConnectionCount = configMonoidConnectionCount l <|> configMonoidConnectionCount r
@@ -884,7 +888,11 @@ instance FromJSON (ConfigMonoid, [JSONWarning]) where
 -- warnings for missing fields.
 parseConfigMonoidJSON :: Object -> WarningParser ConfigMonoid
 parseConfigMonoidJSON obj = do
+<<<<<<< HEAD
     configMonoidWorkDir <- obj ..:? configMonoidWorkDirName
+=======
+    configMonoidBuildOpts <- jsonSubWarnings (obj ..:? configMonoidBuildOptsName ..!= mempty)
+>>>>>>> Adding buildOptsMonoid and related types
     configMonoidDockerOpts <- jsonSubWarnings (obj ..:? configMonoidDockerOptsName ..!= mempty)
     configMonoidNixOpts <- jsonSubWarnings (obj ..:? configMonoidNixOptsName ..!= mempty)
     configMonoidConnectionCount <- obj ..:? configMonoidConnectionCountName
@@ -963,8 +971,13 @@ parseConfigMonoidJSON obj = do
                         Right x -> return $ Just x
         return (name, b)
 
+<<<<<<< HEAD
 configMonoidWorkDirName :: Text
 configMonoidWorkDirName = "work-dir"
+=======
+configMonoidBuildOptsName :: Text
+configMonoidBuildOptsName = "build"
+>>>>>>> Adding buildOptsMonoid and related types
 
 configMonoidDockerOptsName :: Text
 configMonoidDockerOptsName = "docker"

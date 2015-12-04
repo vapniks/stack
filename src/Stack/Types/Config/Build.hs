@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleInstances, RecordWildCards, OverloadedStrings #-}
+
 -- | Configuration options for building.
 
 module Stack.Types.Config.Build
@@ -14,12 +16,15 @@ module Stack.Types.Config.Build
     )
     where
 
+import           Data.Aeson.Extended
 import qualified Data.Map as Map
 import           Data.Map.Strict (Map)
+import           Data.Monoid
 import           Data.Text (Text)
 import           Stack.Types.FlagName
 import           Stack.Types.PackageName
-                 
+import           Control.Applicative
+
 data BuildOpts =
   BuildOpts {boptsTargets :: ![Text]
             ,boptsLibProfile :: !Bool
@@ -92,29 +97,117 @@ defaultBuildOpts = BuildOpts
 -- | An uninterpreted representation of build options.
 -- Configurations may be "cascaded" using mappend (left-biased).
 data BuildOptsMonoid = BuildOptsMonoid
-    { buildMonoidTargets :: ![Text]
-    , buildMonoidLibProfile :: !Bool
-    , buildMonoidExeProfile :: !Bool
-    , buildMonoidHaddock :: !Bool
+    { -- buildMonoidTargets :: ![Text]
+    buildMonoidLibProfile :: !(Maybe Bool)
+    , buildMonoidExeProfile :: !(Maybe Bool)
+    , buildMonoidHaddock :: !(Maybe Bool)
     , buildMonoidHaddockDeps :: !(Maybe Bool)
-    , buildMonoidDryrun :: !Bool
-    , buildMonoidGhcOptions :: ![Text]
-    , buildMonoidFlags :: !(Map (Maybe PackageName) (Map FlagName Bool))
-    , buildMonoidInstallExes :: !Bool
-    , buildMonoidPreFetch :: !Bool
-    , buildMonoidBuildSubset :: !BuildSubset
-    , buildMonoidFileWatch :: !FileWatchOpts
+    , buildMonoidInstallExes :: !(Maybe Bool)
+    , buildMonoidPreFetch :: !(Maybe Bool)
     , buildMonoidKeepGoing :: !(Maybe Bool)
-    , buildMonoidForceDirty :: !Bool
-    , buildMonoidTests :: !Bool
-    , buildMonoidTestOpts :: !TestOpts
-    , buildMonoidBenchmarks :: !Bool
-    , buildMonoidBenchmarkOpts :: !BenchmarkOpts
-    , buildMonoidExec :: ![(String, [String])]
-    , buildMonoidOnlyConfigure :: !Bool
-    , buildMonoidReconfigure :: !Bool
-    , buildMonoidCabalVerbose :: !Bool
+    , buildMonoidForceDirty :: !(Maybe Bool)
+    , buildMonoidTests :: !(Maybe Bool)
+    , buildMonoidTestOpts :: !TestOptsMonoid
+    , buildMonoidBenchmarks :: !(Maybe Bool)
+    , buildMonoidBenchmarkOpts :: !BenchmarkOptsMonoid
+    , buildMonoidReconfigure :: !(Maybe Bool)
+    , buildMonoidCabalVerbose :: !(Maybe Bool)
     } deriving (Show)
+
+instance FromJSON (BuildOptsMonoid, [JSONWarning]) where
+  parseJSON = withObjectWarnings "BuildOptsMonoid"
+    (\o -> do buildMonoidLibProfile <- o ..:? buildMonoidLibProfileArgName
+              buildMonoidExeProfile <- o ..:? buildMonoidExeProfileArgName
+              buildMonoidHaddock <- o ..:? buildMonoidHaddockArgName
+              buildMonoidHaddockDeps <- o ..:? buildMonoidHaddockDepsArgName
+              buildMonoidInstallExes <- o ..:? buildMonoidInstallExesArgName
+              buildMonoidPreFetch <- o ..:? buildMonoidPreFetchArgName
+              buildMonoidKeepGoing <- o ..:? buildMonoidKeepGoingArgName
+              buildMonoidForceDirty <- o ..:? buildMonoidForceDirtyArgName
+              buildMonoidTests <- o ..:? buildMonoidTestsArgName
+              buildMonoidTestOpts <- jsonSubWarnings (o ..:? buildMonoidTestOptsArgName ..!= mempty)
+              buildMonoidBenchmarks <- o ..:? buildMonoidBenchmarksArgName
+              buildMonoidBenchmarkOpts <- jsonSubWarnings (o ..:? buildMonoidBenchmarkOptsArgName ..!= mempty)
+              buildMonoidReconfigure <- o ..:? buildMonoidReconfigureArgName
+              buildMonoidCabalVerbose <- o ..:? buildMonoidCabalVerboseArgName
+              return BuildOptsMonoid{..})
+
+buildMonoidLibProfileArgName :: Text
+buildMonoidLibProfileArgName = "library-profiling"
+
+buildMonoidExeProfileArgName :: Text
+buildMonoidExeProfileArgName = "executable-profiling"
+
+buildMonoidHaddockArgName :: Text
+buildMonoidHaddockArgName = "haddock"
+
+buildMonoidHaddockDepsArgName :: Text
+buildMonoidHaddockDepsArgName = "haddock-deps"
+
+buildMonoidInstallExesArgName :: Text
+buildMonoidInstallExesArgName = "copy-bins"
+
+buildMonoidPreFetchArgName :: Text
+buildMonoidPreFetchArgName = "prefetch"
+
+buildMonoidKeepGoingArgName :: Text
+buildMonoidKeepGoingArgName = "keep-going"
+
+buildMonoidForceDirtyArgName :: Text
+buildMonoidForceDirtyArgName = "force-dirty"
+
+buildMonoidTestsArgName :: Text
+buildMonoidTestsArgName = "test"
+
+buildMonoidTestOptsArgName :: Text
+buildMonoidTestOptsArgName = "test-arguments"
+
+buildMonoidBenchmarksArgName :: Text
+buildMonoidBenchmarksArgName = "bench"
+
+buildMonoidBenchmarkOptsArgName :: Text
+buildMonoidBenchmarkOptsArgName = "benchmark-opts"
+
+buildMonoidReconfigureArgName :: Text
+buildMonoidReconfigureArgName = "reconfigure"
+
+buildMonoidCabalVerboseArgName :: Text
+buildMonoidCabalVerboseArgName = "cabal-verbose"
+
+instance Monoid BuildOptsMonoid where
+  mempty = BuildOptsMonoid
+    {buildMonoidLibProfile = Nothing
+    ,buildMonoidExeProfile = Nothing
+    ,buildMonoidHaddock = Nothing
+    ,buildMonoidHaddockDeps = Nothing
+    ,buildMonoidInstallExes = Nothing
+    ,buildMonoidPreFetch = Nothing
+    ,buildMonoidKeepGoing = Nothing
+    ,buildMonoidForceDirty = Nothing
+    ,buildMonoidTests = Nothing
+    ,buildMonoidTestOpts = mempty
+    ,buildMonoidBenchmarks = Nothing
+    ,buildMonoidBenchmarkOpts = mempty
+    ,buildMonoidReconfigure = Nothing
+    ,buildMonoidCabalVerbose = Nothing
+    }
+
+  mappend l r = BuildOptsMonoid
+    {buildMonoidLibProfile = buildMonoidLibProfile l <|> buildMonoidLibProfile r
+    ,buildMonoidExeProfile = buildMonoidExeProfile l <|> buildMonoidExeProfile r
+    ,buildMonoidHaddock = buildMonoidHaddock l <|> buildMonoidHaddock r
+    ,buildMonoidHaddockDeps = buildMonoidHaddockDeps l <|> buildMonoidHaddockDeps r
+    ,buildMonoidInstallExes = buildMonoidInstallExes l <|> buildMonoidInstallExes r
+    ,buildMonoidPreFetch = buildMonoidPreFetch l <|> buildMonoidPreFetch r
+    ,buildMonoidKeepGoing = buildMonoidKeepGoing l <|> buildMonoidKeepGoing r
+    ,buildMonoidForceDirty = buildMonoidForceDirty l <|> buildMonoidForceDirty r
+    ,buildMonoidTests = buildMonoidTests l <|> buildMonoidTests r
+    ,buildMonoidTestOpts = buildMonoidTestOpts l <> buildMonoidTestOpts r
+    ,buildMonoidBenchmarks = buildMonoidBenchmarks l <|> buildMonoidBenchmarks r
+    ,buildMonoidBenchmarkOpts = buildMonoidBenchmarkOpts l <> buildMonoidBenchmarkOpts r
+    ,buildMonoidReconfigure = buildMonoidReconfigure l <|> buildMonoidReconfigure r
+    ,buildMonoidCabalVerbose = buildMonoidCabalVerbose l <|> buildMonoidCabalVerbose r
+    }
 
 -- | Which subset of packages to build
 data BuildSubset
@@ -141,6 +234,48 @@ defaultTestOpts = TestOpts
     , toDisableRun = False
     }
 
+data TestOptsMonoid =
+  TestOptsMonoid 
+    {toMonoidRerunTests :: !(Maybe Bool)
+    ,toMonoidAdditionalArgs :: ![String]
+    ,toMonoidCoverage :: !(Maybe Bool)
+    ,toMonoidDisableRun :: !(Maybe Bool)
+    } deriving (Show)
+
+instance FromJSON (TestOptsMonoid, [JSONWarning]) where
+  parseJSON = withObjectWarnings "TestOptsMonoid"
+    (\o -> do toMonoidRerunTests <- o ..:? toMonoidRerunTestsArgName 
+              toMonoidAdditionalArgs <- o ..:? toMonoidAdditionalArgsName ..!= []
+              toMonoidCoverage <- o ..:? toMonoidCoverageArgName
+              toMonoidDisableRun <- o ..:? toMonoidDisableRunArgName
+              return TestOptsMonoid{..})
+
+toMonoidRerunTestsArgName :: Text
+toMonoidRerunTestsArgName = "rerun-tests"
+
+toMonoidAdditionalArgsName :: Text
+toMonoidAdditionalArgsName = "additional-args"
+
+toMonoidCoverageArgName :: Text
+toMonoidCoverageArgName = "coverage"
+
+toMonoidDisableRunArgName :: Text
+toMonoidDisableRunArgName = "no-run-tests"
+
+instance Monoid TestOptsMonoid where
+  mempty = TestOptsMonoid
+    {toMonoidRerunTests = Nothing
+    ,toMonoidAdditionalArgs = []
+    ,toMonoidCoverage = Nothing
+    ,toMonoidDisableRun = Nothing
+    }  
+  mappend l r = TestOptsMonoid
+    {toMonoidRerunTests = toMonoidRerunTests l <|> toMonoidRerunTests r
+    ,toMonoidAdditionalArgs = toMonoidAdditionalArgs l <> toMonoidAdditionalArgs r
+    ,toMonoidCoverage = toMonoidCoverage l <|> toMonoidCoverage r
+    ,toMonoidDisableRun = toMonoidDisableRun l <|> toMonoidDisableRun r
+    }  
+
 -- | Options for the 'FinalAction' 'DoBenchmarks'
 data BenchmarkOpts =
   BenchmarkOpts {beoAdditionalArgs :: !(Maybe String) -- ^ Arguments passed to the benchmark program
@@ -152,6 +287,32 @@ defaultBenchmarkOpts = BenchmarkOpts
     { beoAdditionalArgs = Nothing
     , beoDisableRun = False
     }
+
+data BenchmarkOptsMonoid =
+  BenchmarkOptsMonoid 
+     {beoMonoidAdditionalArgs :: !(Maybe String)
+     ,beoMonoidDisableRun :: !(Maybe Bool)
+     } deriving (Show)
+
+instance FromJSON (BenchmarkOptsMonoid, [JSONWarning]) where
+  parseJSON = withObjectWarnings "BenchmarkOptsMonoid"
+    (\o -> do beoMonoidAdditionalArgs <- o ..:? beoMonoidAdditionalArgsArgName
+              beoMonoidDisableRun <- o ..:? beoMonoidDisableRunArgName
+              return BenchmarkOptsMonoid{..})
+
+beoMonoidAdditionalArgsArgName :: Text
+beoMonoidAdditionalArgsArgName = "benchmark-arguments"  
+        
+beoMonoidDisableRunArgName :: Text
+beoMonoidDisableRunArgName = "no-run-benchmarks"  
+
+instance Monoid BenchmarkOptsMonoid where
+  mempty = BenchmarkOptsMonoid
+    {beoMonoidAdditionalArgs = Nothing
+    ,beoMonoidDisableRun = Nothing}
+  mappend l r = BenchmarkOptsMonoid
+    {beoMonoidAdditionalArgs = beoMonoidAdditionalArgs l <|> beoMonoidAdditionalArgs r
+    ,beoMonoidDisableRun = beoMonoidDisableRun l <|> beoMonoidDisableRun r}
 
 data FileWatchOpts
   = NoFileWatch
