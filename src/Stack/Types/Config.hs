@@ -119,7 +119,7 @@ module Stack.Types.Config
   ,SetupInfoLocation(..)
   -- ** Docker entrypoint
   ,DockerEntrypoint(..)
-  ,module X
+  ,module Stack.Types.Config.Build
   ) where
 
 import           Control.Applicative
@@ -171,9 +171,9 @@ import           Stack.Types.PackageName
 import           Stack.Types.Version
 import           System.PosixCompat.Types (UserID, GroupID)
 import           System.Process.Read (EnvOverride)
-                 
+
 -- Re-exports
-import          Stack.Types.Config.Build as X
+import          Stack.Types.Config.Build
 
 #ifdef mingw32_HOST_OS
 import qualified Crypto.Hash.SHA1 as SHA1

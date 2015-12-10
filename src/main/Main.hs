@@ -822,7 +822,7 @@ cleanCmd opts go = withBuildConfigAndLock go (const (clean opts))
 
 -- | Helper for build and install commands
 buildCmd :: BuildOpts -> GlobalOpts -> IO ()
-buildCmd opts go = do
+buildCmd fixme go = do
   when (any (("-prof" `elem`) . either (const []) id . parseArgs Escaping) (boptsGhcOptions opts)) $ do
     hPutStrLn stderr "When building with stack, you should not use the -prof GHC option"
     hPutStrLn stderr "Instead, please use --library-profiling and --executable-profiling"
@@ -833,8 +833,9 @@ buildCmd opts go = do
     FileWatch -> fileWatch inner
     NoFileWatch -> inner $ const $ return ()
   where
-    inner setLocalFiles = withBuildConfigAndLock go $ \lk ->
+    inner setLocalFiles = withBuildConfigAndLock go $ \lk -> do
         Stack.Build.build setLocalFiles lk opts
+    opts = buildOptsFromMonoid . configMonoidBuildOpts . globalConfigMonoid $ go
 
 uninstallCmd :: [String] -> GlobalOpts -> IO ()
 uninstallCmd _ go = withConfigAndLock go $ do

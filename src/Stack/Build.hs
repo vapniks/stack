@@ -77,8 +77,10 @@ build :: M env m
       -> Maybe FileLock
       -> BuildOpts
       -> m ()
-build setLocalFiles mbuildLk bopts = fixCodePage' $ do
+build setLocalFiles mbuildLk fixme = fixCodePage' $ do
     menv <- getMinimalEnvOverride
+    bopts <- asks (configBuild . getConfig)
+    let profiling = boptsLibProfile bopts || boptsExeProfile bopts
 
     (_, mbp, locals, extraToBuild, sourceMap) <- loadSourceMap NeedTargets bopts
 
@@ -123,8 +125,7 @@ build setLocalFiles mbuildLk bopts = fixCodePage' $ do
                          localDumpPkgs
                          installedMap
                          plan
-  where
-    profiling = boptsLibProfile bopts || boptsExeProfile bopts
+
 
 -- | If all the tasks are local, they don't mutate anything outside of our local directory.
 allLocal :: Plan -> Bool

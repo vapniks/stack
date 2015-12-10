@@ -97,8 +97,7 @@ defaultBuildOpts = BuildOpts
 -- | An uninterpreted representation of build options.
 -- Configurations may be "cascaded" using mappend (left-biased).
 data BuildOptsMonoid = BuildOptsMonoid
-    { -- buildMonoidTargets :: ![Text]
-    buildMonoidLibProfile :: !(Maybe Bool)
+    { buildMonoidLibProfile :: !(Maybe Bool)
     , buildMonoidExeProfile :: !(Maybe Bool)
     , buildMonoidHaddock :: !(Maybe Bool)
     , buildMonoidHaddockDeps :: !(Maybe Bool)
@@ -235,7 +234,7 @@ defaultTestOpts = TestOpts
     }
 
 data TestOptsMonoid =
-  TestOptsMonoid 
+  TestOptsMonoid
     {toMonoidRerunTests :: !(Maybe Bool)
     ,toMonoidAdditionalArgs :: ![String]
     ,toMonoidCoverage :: !(Maybe Bool)
@@ -244,7 +243,7 @@ data TestOptsMonoid =
 
 instance FromJSON (TestOptsMonoid, [JSONWarning]) where
   parseJSON = withObjectWarnings "TestOptsMonoid"
-    (\o -> do toMonoidRerunTests <- o ..:? toMonoidRerunTestsArgName 
+    (\o -> do toMonoidRerunTests <- o ..:? toMonoidRerunTestsArgName
               toMonoidAdditionalArgs <- o ..:? toMonoidAdditionalArgsName ..!= []
               toMonoidCoverage <- o ..:? toMonoidCoverageArgName
               toMonoidDisableRun <- o ..:? toMonoidDisableRunArgName
@@ -268,13 +267,13 @@ instance Monoid TestOptsMonoid where
     ,toMonoidAdditionalArgs = []
     ,toMonoidCoverage = Nothing
     ,toMonoidDisableRun = Nothing
-    }  
+    }
   mappend l r = TestOptsMonoid
     {toMonoidRerunTests = toMonoidRerunTests l <|> toMonoidRerunTests r
     ,toMonoidAdditionalArgs = toMonoidAdditionalArgs l <> toMonoidAdditionalArgs r
     ,toMonoidCoverage = toMonoidCoverage l <|> toMonoidCoverage r
     ,toMonoidDisableRun = toMonoidDisableRun l <|> toMonoidDisableRun r
-    }  
+    }
 
 -- | Options for the 'FinalAction' 'DoBenchmarks'
 data BenchmarkOpts =
@@ -289,7 +288,7 @@ defaultBenchmarkOpts = BenchmarkOpts
     }
 
 data BenchmarkOptsMonoid =
-  BenchmarkOptsMonoid 
+  BenchmarkOptsMonoid
      {beoMonoidAdditionalArgs :: !(Maybe String)
      ,beoMonoidDisableRun :: !(Maybe Bool)
      } deriving (Show)
@@ -301,10 +300,10 @@ instance FromJSON (BenchmarkOptsMonoid, [JSONWarning]) where
               return BenchmarkOptsMonoid{..})
 
 beoMonoidAdditionalArgsArgName :: Text
-beoMonoidAdditionalArgsArgName = "benchmark-arguments"  
-        
+beoMonoidAdditionalArgsArgName = "benchmark-arguments"
+
 beoMonoidDisableRunArgName :: Text
-beoMonoidDisableRunArgName = "no-run-benchmarks"  
+beoMonoidDisableRunArgName = "no-run-benchmarks"
 
 instance Monoid BenchmarkOptsMonoid where
   mempty = BenchmarkOptsMonoid

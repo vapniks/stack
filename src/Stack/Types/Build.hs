@@ -410,7 +410,7 @@ instance Show ConstructPlanException where
 
 ----------------------------------------------
 
-        
+
 -- | Package dependency oracle.
 newtype PkgDepsOracle =
     PkgDeps PackageName

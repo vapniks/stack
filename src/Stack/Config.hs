@@ -28,6 +28,7 @@ module Stack.Config
   ,resolvePackageEntry
   ,getImplicitGlobalProjectDir
   ,getIsGMP4
+  ,module Stack.Config.Build
   ) where
 
 import qualified Codec.Archive.Tar as Tar
