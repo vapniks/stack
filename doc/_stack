@@ -106,7 +106,7 @@ function _stack_regex_arguments() {
 	regexcmd+=" ')' "
     fi
     # Put all completions together
-    local regexall="${regexopt//COMMAND/} ${regexcmd}"
+    local regexall="${regexopt//COMMAND/$regexcmd}"
     _restore_options rematchpcre
     # output the _regex_arguments arguments
     print "$regexall"
@@ -158,7 +158,8 @@ function() {
 	" COMPILER " " /$'ghc[^\0]#\0'/ ':compiler:compiler:' "
 	" CREATED-DAYS-AGO " " $matchinteger ':number:number:' "
 	" DEPTH " " $matchinteger ':number:number:' "
-	" DIR " " $matchany ':directory:directory:_dirs' "		
+	" DIR " " $matchany ':directory:directory:_dirs' "
+	" FILE " " $matchany ':file:file:_files' "
 	" FIELD VALUE " " '(' $matchany ':field:field:' $matchany ':value:value:' ')' "
 	" GHC " " $matchany ':file:ghc:_files' "
 	" GHC_VERSION " " /$'[0-9.]##\0'/ ':version:version:' "
